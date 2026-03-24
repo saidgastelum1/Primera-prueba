@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>WebAR · Said Gastelum</title>
+
+  <!-- MindAR desde unpkg (más estable en celular) -->
+  <script src="https://unpkg.com/aframe@1.3.0/dist/aframe-master.js"></script>
+  <script src="https://unpkg.com/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+
+  <style>
+    * { margin: 0; padding: 0; }
+    html, body { overflow: hidden; background: #000; }
+
+    #msg {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.65);
+      color: white;
+      font-family: sans-serif;
+      font-size: 16px;
+      padding: 12px 28px;
+      border-radius: 24px;
+      z-index: 9999;
+      text-align: center;
+      width: 85%;
+    }
+
+    #btnAudio {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 9999;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      border: 1px solid white;
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-family: sans-serif;
+      cursor: pointer;
+    }
+
+    #btnAudio.activo {
+      background: rgba(224,255,96,0.3);
+      border-color: #e0ff60;
+      color: #e0ff60;
+    }
+  </style>
+</head>
+<body>
+
+  <button id="btnAudio">🔇 Audio</button>
+  <div id="msg">⏳ Cargando...</div>
+
+  <audio id="audio" src="audio.mp3" preload="auto"></audio>
+
+  <a-scene
+    mindar-image="imageTargetSrc: targets.mind; autoStart: true;"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false"
+    renderer="colorManagement: true;"
+  >
+    <a-assets>
+      <a-asset-item id="model" src="https://cdn.jsdelivr.net/gh/nicktarnold/GLTF-models@master/Fox/Fox.glb"></a-asset-item>
+    </a-assets>
+
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+    <a-entity mindar-image-target="targetIndex: 0">
+      <a-entity
+        gltf-model="#model"
+        scale="0.005 0.005 0.005"
+        position="0 0 0"
+        rotation="-90 0 0"
+        animation="property: rotation; to: -90 360 0; loop: true; dur: 3000; easing: linear"
+      ></a-entity>
+    </a-entity>
+
+    <a-light type="ambient" intensity="2"></a-light>
+
+  </a-scene>
+
+  <script>
+    const msg      = document.getElementById('msg');
+    const audio    = document.getElementById('audio');
+    const btnAudio = document.getElementById('btnAudio');
+    let audioActivo = false;
+
+    // Botón de audio
+    btnAudio.addEventListener('click', () => {
+      audioActivo = !audioActivo;
+      if (audioActivo) {
+        audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {});
+        btnAudio.textContent = '🔊 Audio';
+        btnAudio.classList.add('activo');
+      } else {
+        audio.pause();
+        audio.currentTime = 0;
+        btnAudio.textContent = '🔇 Audio';
+        btnAudio.classList.remove('activo');
+      }
+    });
+
+    const scene = document.querySelector('a-scene');
+
+    scene.addEventListener('arReady', () => {
+      msg.textContent = 'Apunta la cámara a tu imagen';
+    });
+
+    scene.addEventListener('arError', () => {
+      msg.textContent = '❌ Error al cargar AR';
+    });
+
+    scene.addEventListener('targetFound', () => {
+      msg.textContent = '🎯 ¡Imagen detectada!';
+      if (audioActivo) audio.play().catch(() => {});
+    });
+
+    scene.addEventListener('targetLost', () => {
+      msg.textContent = 'Apunta la cámara a tu imagen';
+      audio.pause();
+      audio.currentTime = 0;
+    });
+  </script>
+
+</body>
+</html>
